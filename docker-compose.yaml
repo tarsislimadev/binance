@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  cli:
+    build: './src/cli'
+    volumes:
+      - './src/cli:/app'
+      - './data:/data'
+  ws:
+    build: './src/ws'
+    volumes:
+      - './src/ws:/app'
+      - './data:/data'
+    ports:
+      - '8000:80'
+  www:
+    build: './src/www'
+    volumes:
+      - './src/www/html:/usr/share/nginx/html'
+    ports:
+      - '8080:80'
