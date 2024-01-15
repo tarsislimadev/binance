@@ -30,6 +30,7 @@ export class Page extends HTML {
 
   setMessages() {
     this.on('buy', (data) => this.onBuyButtonClick(data))
+    return this
   }
 
   setSocketMessages() {
@@ -47,10 +48,12 @@ export class Page extends HTML {
 
     this.state.socket.on('buys', (data) => this.onBuysList(data))
     this.state.socket.on('error buys', (err) => console.error(err))
+    return this
   }
 
   onConnect() {
     this.state.socket.emit('hello')
+    return this
   }
 
   setPairs(pairs = []) {
@@ -75,17 +78,7 @@ export class Page extends HTML {
     this.children.pairs_list.clear()
     this.children.pairs_list.append((new nH2()).setText('Pairs'))
     this.children.pairs_list.append(pairs_list)
-  }
-
-  onSymbolPriceTicker(data) {
-    this.setPairs(data)
-    this.updatePairsList()
-    this.updateBuysList()
     return this
-  }
-
-  onCheckServerTime(data) {
-    console.log('check server time', data)
   }
 
   setBuys(data = []) {
@@ -106,35 +99,68 @@ export class Page extends HTML {
     return +symbol_price - +price
   }
 
+  getBuy(datetime) {
+    return this.getBuys().find((buy) => buy.datetime == datetime)
+  }
+
+  onSellButtonClick(datetime, amount = 1) {
+    const buy = this.getBuy(datetime)
+    this.state.socket.emit('sell', { datetime, price: this.getPrice(buy.symbol), amount })
+    return this
+  }
+
   updateBuysList() {
     const buys_list = new HTML()
 
-    this.state.buys.map(({ amount, datetime, price, symbol }) => {
+    this.getBuys().map(({ amount, datetime, price, symbol, sell_amount = null, sell_datetime = null, sell_price = null, }) => {
       const html = new HTML()
       html.append((new HTML()).setText(`symbol: ${symbol}`))
-      html.append((new HTML()).setText(`price: ${price}`))
-      html.append((new HTML()).setText(`price diff: ${this.getPriceDiff(symbol, price)}`))
       html.append((new HTML()).setText(`datetime: ${datetime}`))
       html.append((new HTML()).setText(`amount: ${amount}`))
+      html.append((new HTML()).setText(`price: ${price}`))
+      html.append((new HTML()).setText(`price diff: ${this.getPriceDiff(symbol, price)}`))
+      if (sell_datetime) {
+        html.append((new HTML()).setText(`sell amount: ${sell_amount}`))
+        html.append((new HTML()).setText(`sell datetime: ${sell_datetime}`))
+        html.append((new HTML()).setText(`sell price: ${sell_price}`))
+      } else {
+        html.append((new nButton()).setText(`sell ${amount} ${symbol}`).on('click', () => this.onSellButtonClick(datetime)))
+      }
       buys_list.append(html)
     })
 
     this.children.buys_list.clear()
     this.children.buys_list.append((new nH2()).setText('Buys'))
+    this.children.buys_list.append((new nButton()).setText('update buys list').on('click', () => this.state.socket.emit('buys')))
     this.children.buys_list.append(buys_list)
+    return this
+  }
 
+  onSymbolPriceTicker(data) {
+    this.setPairs(data)
+    this.updatePairsList()
+    this.updateBuysList()
+    return this
+  }
+
+  onCheckServerTime(data) {
+    console.log('check server time', data)
+    return this
   }
 
   onBuy(data) {
-    console.log('buy', data)
+    this.state.socket.emit('buys')
+    return this
   }
 
   onBuysList(data) {
     this.setBuys(data)
+    return this
   }
 
   onBuyButtonClick({ value } = {}) {
     this.state.socket.emit('buy', value)
+    return this
   }
 
   getBuyButton(symbol, amount = 1) {
