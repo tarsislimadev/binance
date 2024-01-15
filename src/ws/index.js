@@ -13,25 +13,27 @@ io.on('connection', socket => {
 
   socket.on('hello', () => console.log('client hello'))
 
-  socket.on('symbol price ticker', () =>
-    api.tickerPrice(constants.PAIRS)
-      .then((prices) => [socket.emit('symbol price ticker', prices), database.savePairsPrices(prices)])
-      .then(() => console.log('symbol price ticker'))
-      .catch((err) => socket.emit('error symbol price ticker', err))
-  )
+  const getPriceTicker = () => api.tickerPrice(constants.PAIRS)
+    .then((prices) => [socket.emit('symbol price ticker', prices), database.savePairsPrices(prices)])
+    .then(() => getPriceTicker())
+    .catch((err) => socket.emit('error symbol price ticker', err))
 
-  socket.on('check server time', () => {
-    api.time()
-      .then((time) => [socket.emit('check server time', time),])
-      .then(() => console.log('check server time'))
-      .catch((err) => socket.emit('error check server time', err))
-  })
+  getPriceTicker()
 
-  socket.on('buy', ({ symbol, amount = 1 } = {}) => {
-    api.buy(symbol, amount)
-      .then((buy) => console.log('buy', buy))
-      .catch((err) => console.error(err))
-  })
+  const getServerTime = () => api.time()
+    .then((time) => socket.emit('check server time', time))
+    .then(() => console.log('check server time'))
+    .catch((err) => socket.emit('error check server time', err))
+
+  socket.on('check server time', () => getServerTime())
+
+  const buy = (symbol, price, amount = 1, datetime = Date.now()) => database.saveBuy(symbol, price, amount, datetime)
+    .then((buy) => socket.emit('buy', { symbol, price, amount, datetime }))
+    .then(() => socket.emit('buys', database.getAllBuys()))
+    .catch((err) => console.error(err))
+
+  socket.on('buy', ({ symbol, price, amount = 1 } = {}) => buy(symbol, price, amount))
+
 })
 
 server.listen(80)
