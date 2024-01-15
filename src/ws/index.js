@@ -8,6 +8,22 @@ import * as database from './database.js'
 const server = http.createServer()
 const io = new Server(server, { cors: { origin: '*' } })
 
+const maySell = (buy) => database.getAllPrices()
+  .then((prices) => prices.filter((price) => price.symbol == buy.symbol))
+  .then((prices) => prices.sort((a, b) => a.datetime - b.datetime))
+  .then((prices) => prices.find(() => true))
+  .then((price) => price > buy.price)
+
+const maySellBuy = (buy) => ({ ...buy, maySell: maySell(buy) })
+
+const buys = () => database.getAllBuys()
+  .then((buys) => buys.map((buy) => maySellBuy(buy)))
+  .then((buys) => io.emit('buys', buys))
+  .catch((err) => io.emit('error buys', err))
+  .finally(() => setTimeout(buys, 1000))
+
+buys()
+
 io.on('connection', socket => {
   socket.emit('hello')
 
