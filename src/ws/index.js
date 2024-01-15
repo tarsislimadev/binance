@@ -1,13 +1,9 @@
 import http from 'http'
 import { Server } from 'socket.io'
+
 import * as constants from './constants.js'
-
-import { Database } from '@brtmvdl/database'
-const db = new Database({ config: '/data', type: 'fs' })
-
-const savePairsPrices = (prices = [], datetime = Date.now()) => prices.map(({ symbol, price } = {}) => {
-  db.in('prices').new().writeMany({ symbol, price, datetime })
-})
+import * as api from './api.js'
+import * as database from './database.js'
 
 const server = http.createServer()
 const io = new Server(server, { cors: { origin: '*' } })
@@ -15,19 +11,21 @@ const io = new Server(server, { cors: { origin: '*' } })
 io.on('connection', socket => {
   socket.emit('hello')
 
-  socket.on('event', data => console.log('event', data))
+  socket.on('hello', () => console.log('client hello'))
 
-  socket.on('hello', () => console.log('from client'))
-
-  socket.on('list pairs', () =>
-    fetch(`https://api4.binance.com/api/v3/ticker/price?symbols=[${constants.PAIRS.map(([a, b]) => `"${a}${b}"`).join(',')}]`)
-      .then((res) => res.json())
-      .then((prices) => [socket.emit('list pairs', prices), savePairsPrices(prices)])
-      .then(() => console.log('list pairs'))
-      .catch((err) => console.error(err))
+  socket.on('symbol price ticker', () =>
+    api.tickerPrice(constants.PAIRS)
+      .then((prices) => [socket.emit('symbol price ticker', prices), database.savePairsPrices(prices)])
+      .then(() => console.log('symbol price ticker'))
+      .catch((err) => socket.emit('error symbol price ticker', err))
   )
 
-  socket.on('disconnect', () => console.log('disconnect', socket))
+  socket.on('check server time', () => {
+    api.time()
+      .then((time) => [socket.emit('check server time', time),])
+      .then(() => console.log('check server time'))
+      .catch((err) => socket.emit('error check server time', err))
+  })
 })
 
 server.listen(80)
