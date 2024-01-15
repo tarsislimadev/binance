@@ -22,15 +22,13 @@ io.on('connection', socket => {
 
   const getServerTime = () => api.time()
     .then((time) => socket.emit('check server time', time))
-    .then(() => console.log('check server time'))
     .catch((err) => socket.emit('error check server time', err))
 
   socket.on('check server time', () => getServerTime())
 
   const buy = (symbol, price, amount = 1, datetime = Date.now()) => database.saveBuy(symbol, price, amount, datetime)
     .then((buy) => socket.emit('buy', { symbol, price, amount, datetime }))
-    .then(() => socket.emit('buys', database.getAllBuys()))
-    .catch((err) => console.error(err))
+    .catch((err) => socket.emit('buy error', err))
 
   socket.on('buy', ({ symbol, price, amount = 1 } = {}) => buy(symbol, price, amount))
 

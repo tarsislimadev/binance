@@ -6,4 +6,4 @@ export const savePairsPrices = (prices = [], datetime = Date.now()) => prices.ma
 
 export const saveBuy = (symbol, price, amount = 1, datetime = Date.now()) => Promise.resolve(db.in('buy').new().writeMany({ symbol, price, amount, datetime }))
 
-export const getAllBuys = () => db.in('buy').list().map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime'])).map(([symbol, price, amount, datetime]) => ({ symbol, price, amount, datetime }))
+export const getAllBuys = () => Promise.resolve(db.in('buy').list().map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime'])).map(([symbol, price, amount, datetime]) => ({ symbol, price, amount, datetime })))
