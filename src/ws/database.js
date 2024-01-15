@@ -18,12 +18,20 @@ export const getAllPrices = () => Promise.resolve(
 )
 
 export const saveBuy = (symbol, price, amount = 1, datetime = Date.now()) => Promise.resolve(
-  db.in('buy').new().writeMany({ symbol, price, amount, datetime })
+  db.in('buy')
+    .new()
+    .writeMany({ symbol, price, amount, datetime })
 )
 
 export const getAllBuys = () => Promise.resolve(
   db.in('buy')
     .list()
-    .map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime']))
-    .map(([symbol, price, amount, datetime]) => ({ symbol, price, amount, datetime }))
+    .map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime', 'sell_price', 'sell_amount', 'sell_datetime']))
+    .map(([symbol, price, amount, datetime, sell_price, sell_amount, sell_datetime]) => ({ symbol, price, amount, datetime, sell_price, sell_amount, sell_datetime }))
+)
+
+export const saveSell = (datetime, sell_price, sell_amount = 1, sell_datetime = Date.now()) => Promise.resolve(
+  db.in('buy')
+    .find({ datetime })
+    .writeMany({ sell_price, sell_amount, sell_datetime })
 )
