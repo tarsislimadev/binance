@@ -26,6 +26,12 @@ io.on('connection', socket => {
       .then(() => console.log('check server time'))
       .catch((err) => socket.emit('error check server time', err))
   })
+
+  socket.on('buy', ({ symbol, amount = 1 } = {}) => {
+    api.buy(symbol, amount)
+      .then((buy) => console.log('buy', buy))
+      .catch((err) => console.error(err))
+  })
 })
 
 server.listen(80)
