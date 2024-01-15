@@ -2,23 +2,21 @@ import { HTML, nButton, nFlex } from '@brtmvdl/frontend'
 import { io } from 'socket.io-client'
 
 export class Page extends HTML {
-
   state = {
-    socket: io('ws://0.0.0.0:8000')
+    socket: io('ws://0.0.0.0:8000'),
+    buys: [],
+    pairs: [],
   }
 
   children = {
     pairs_list: new HTML(),
-    list_pairs_button: new nButton(),
-    check_server_time: new nButton(),
+    buys_list: new HTML(),
   }
 
   onCreate() {
     this.setText('Binance')
     this.setMessages()
     this.setSocketMessages()
-    this.append(this.getListPairsButton())
-    this.append(this.getCheckServerTimeButton())
     this.append(this.getPairsList())
   }
 
@@ -35,54 +33,86 @@ export class Page extends HTML {
 
     this.state.socket.on('check server time', (data) => this.onCheckServerTime(data))
     this.state.socket.on('error check server time', (err) => console.error(err))
+
+    this.state.socket.on('buys', (data) => this.onBuys(data))
+    this.state.socket.on('error buys', (err) => console.error(err))
   }
 
   onConnect() {
     this.state.socket.emit('hello')
   }
 
-  onSymbolPriceTicker(pairs) {
+  setPairs(pairs = []) {
+    this.state.pairs = pairs
+    return this
+  }
+
+  getPairs() {
+    return Array.from(this.state.pairs)
+  }
+
+  updatePairsList() {
     const pairs_list = new HTML()
 
-    pairs.map(({ symbol, price }) => {
-      const flex = new nFlex()
-      flex.setStyle('', '')
-      flex.append((new HTML()).setText(symbol))
-      flex.append((new HTML()).setText(price))
-      flex.append(this.getBuyButton(symbol))
-      pairs_list.append(flex)
+    this.getPairs().map(({ symbol, price }) => {
+      const html = new HTML()
+      html.append(this.getBuyButton(symbol))
+      html.append((new HTML()).setText(price))
+      pairs_list.append(html)
     })
 
     this.children.pairs_list.clear()
     this.children.pairs_list.append(pairs_list)
   }
 
+  onSymbolPriceTicker(data) {
+    this.setPairs(data)
+    this.updatePairsList()
+    return this
+  }
+
   onCheckServerTime(data) {
     console.log('check server time', data)
+  }
+
+  setBuys(data = []) {
+    this.state.buys = data
+    return this
+  }
+
+  getBuys() {
+    return Array.from(this.state.buys)
+  }
+
+  updateBuysList() {
+    const buys_list = new HTML()
+
+    console.log('buys', this.getBuys()) // FIXME
+
+    this.children.buys_list.clear()
+    this.children.buys_list.append(buys_list)
+
+  }
+
+  onBuys(data) {
+    this.setBuys(data)
+    this.updateBuysList()
   }
 
   onBuyButtonClick({ value } = {}) {
     this.state.socket.emit('buy', value)
   }
 
+  getPrice(symbol = '') {
+    return this.getPairs().find((pair) => pair.symbol == symbol)['price']
+  }
+
   getBuyButton(symbol, amount = 1) {
     const button = new nButton()
-    const text = `buy ${amount}${symbol}`
+    const text = `buy ${amount} ${symbol}`
     button.setText(text)
-    button.on('click', () => this.dispatchEvent('buy', { symbol, amount }))
+    button.on('click', () => this.dispatchEvent('buy', { symbol, price: this.getPrice(symbol), amount }))
     return button
-  }
-
-  getListPairsButton() {
-    this.children.list_pairs_button.setText('Symbol Price Ticker')
-    this.children.list_pairs_button.on('click', () => this.state.socket.emit('symbol price ticker'))
-    return this.children.list_pairs_button
-  }
-
-  getCheckServerTimeButton() {
-    this.children.check_server_time.setText('Check Server Time')
-    this.children.check_server_time.on('click', () => this.state.socket.emit('check server time'))
-    return this.children.check_server_time
   }
 
   getPairsList() {
