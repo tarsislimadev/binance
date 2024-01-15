@@ -2,6 +2,7 @@ import { HTML, nButton, nFlex } from '@brtmvdl/frontend'
 import { io } from 'socket.io-client'
 
 export class Page extends HTML {
+
   state = {
     socket: io('ws://0.0.0.0:8000'),
     buys: [],
@@ -34,8 +35,11 @@ export class Page extends HTML {
     this.state.socket.on('check server time', (data) => this.onCheckServerTime(data))
     this.state.socket.on('error check server time', (err) => console.error(err))
 
-    this.state.socket.on('buys', (data) => this.onBuys(data))
-    this.state.socket.on('error buys', (err) => console.error(err))
+    this.state.socket.on('buy', (data) => this.onBuy(data))
+    this.state.socket.on('error buy', (err) => console.error(err))
+
+    this.state.socket.on('buys list', (data) => this.onBuysList(data))
+    this.state.socket.on('error buys list', (err) => console.error(err))
   }
 
   onConnect() {
@@ -94,7 +98,11 @@ export class Page extends HTML {
 
   }
 
-  onBuys(data) {
+  onBuy(data) {
+    console.log('buy', data)
+  }
+
+  onBuysList(data) {
     this.setBuys(data)
     this.updateBuysList()
   }
