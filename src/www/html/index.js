@@ -1,4 +1,4 @@
-import { HTML, nH1, nH2, nButton, nFlex } from '@brtmvdl/frontend'
+import { HTML, nH1, nH2, nButton, nFlex, nInputTextGroup } from '@brtmvdl/frontend'
 import { io } from 'socket.io-client'
 
 export class Page extends HTML {
@@ -12,12 +12,14 @@ export class Page extends HTML {
   children = {
     pairs_list: new HTML(),
     buys_list: new HTML(),
+    amount_input: new nInputTextGroup(),
   }
 
   onCreate() {
     this.append(this.getTitle())
     this.setMessages()
     this.setSocketMessages()
+    this.append(this.getAmountInput())
     this.append(this.getPairsList())
     this.append(this.getBuysList())
   }
@@ -163,12 +165,24 @@ export class Page extends HTML {
     return this
   }
 
-  getBuyButton(symbol, amount = 1) {
+  getAmountValue(symbol) {
+    const value = this.children.amount_input.children.input.getValue()
+    const price = this.getPrice(symbol)
+    return +value / +price
+  }
+
+  getBuyButton(symbol) {
     const button = new nButton()
-    const text = `buy ${amount} ${symbol}`
+    const text = `buy ${symbol}`
     button.setText(text)
-    button.on('click', () => this.dispatchEvent('buy', { symbol, price: this.getPrice(symbol), amount }))
+    button.on('click', () => this.dispatchEvent('buy', { symbol, price: this.getPrice(symbol), amount: this.getAmountValue(symbol) }))
     return button
+  }
+
+  getAmountInput() {
+    this.children.amount_input.children.label.setText('Amount')
+    this.children.amount_input.children.input.setAttr('type', 'number')
+    return this.children.amount_input
   }
 
   getPairsList() {
