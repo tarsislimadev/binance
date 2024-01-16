@@ -42,19 +42,21 @@ io.on('connection', socket => {
 
   socket.on('check server time', () => onServerTime())
 
-  const onBuy = (symbol, price, amount = 1, datetime = Date.now()) => database.saveBuy(symbol, price, amount, datetime)
-    .then((buy) => emit('buy', { symbol, price, amount, datetime }))
-    .catch((err) => emit('buy error', err))
-
-  socket.on('buy', ({ symbol, price, amount = 1 } = {}) => onBuy(symbol, price, amount))
-
   const onBuys = () => database.getAllBuys()
     .then((buys) => emit('buys', buys))
     .catch((err) => emit('error buys', err))
 
   socket.on('buys', () => onBuys())
 
-  const onSell = (datetime, price, amount) => database.saveSell(datetime, price, amount).then(() => onBuys())
+  const onBuy = (symbol, price, amount = 1, datetime = Date.now()) => database.saveBuy(symbol, price, amount, datetime)
+    .then((buy) => emit('buy', { symbol, price, amount, datetime }))
+    .then(() => onBuys())
+    .catch((err) => emit('buy error', err))
+
+  socket.on('buy', ({ symbol, price, amount = 1 } = {}) => onBuy(symbol, price, amount))
+
+  const onSell = (datetime, price, amount) => database.saveSell(datetime, price, amount)
+    .then(() => onBuys())
 
   socket.on('sell', ({ datetime, price, amount }) => onSell(datetime, price, amount))
 
