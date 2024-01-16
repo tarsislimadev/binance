@@ -10,12 +10,18 @@ export const savePairsPrices = (prices = [], datetime = Date.now()) => Promise.a
   prices.map(({ symbol, price } = {}) => savePrice(symbol, price, datetime))
 )
 
-export const getAllPrices = () => Promise.resolve(
-  db.in('price')
-    .list()
-    .map((buy) => buy.readManyString(['symbol', 'price', 'datetime']))
-    .map(([symbol, price, datetime]) => ({ symbol, price, datetime }))
-)
+export const getAllPricesSync = () => db.in('price')
+  .list()
+  .map((buy) => buy.readManyString(['symbol', 'price', 'datetime']).map((str) => '' + str))
+  .map(([symbol, price, datetime]) => ({ symbol, price, datetime }))
+
+export const getAllPrices = () => Promise.resolve(getAllPricesSync())
+
+export const getOldestPriceSync = (symbol, datetime = Date.now() - 1000) => getAllPricesSync()
+  .filter((price) => price.symbol == symbol)
+  .filter((price) => +price.datetime < +datetime)
+  .sort((a, b) => b.datetime - a.datetime)
+  .find(() => true)
 
 export const saveBuy = (symbol, price, amount = 1, datetime = Date.now()) => Promise.resolve(
   db.in('buy')
@@ -26,7 +32,7 @@ export const saveBuy = (symbol, price, amount = 1, datetime = Date.now()) => Pro
 export const getAllBuys = () => Promise.resolve(
   db.in('buy')
     .list()
-    .map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime', 'sell_price', 'sell_amount', 'sell_datetime']))
+    .map((buy) => buy.readManyString(['symbol', 'price', 'amount', 'datetime', 'sell_price', 'sell_amount', 'sell_datetime']).map((str) => '' + str))
     .map(([symbol, price, amount, datetime, sell_price, sell_amount, sell_datetime]) => ({ symbol, price, amount, datetime, sell_price, sell_amount, sell_datetime }))
 )
 
