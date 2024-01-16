@@ -70,10 +70,12 @@ export class Page extends HTML {
   updatePairsList() {
     const pairs_list = new HTML()
 
-    this.getPairs().map(({ symbol, price }) => {
+    this.getPairs().map(({ symbol, price, price_x, price_y }) => {
       const html = new HTML()
       html.append(this.getBuyButton(symbol))
-      html.append((new HTML()).setText(price))
+      html.append((new HTML()).setText(`price: ${price}`))
+      html.append((new HTML()).setText(`price y: ${price_y?.price} - diff y: ${+price - +price_y?.price}`))
+      html.append((new HTML()).setText(`price x: ${price_x?.price} - diff x: ${+price - +price_x?.price}`))
       pairs_list.append(html)
     })
 
