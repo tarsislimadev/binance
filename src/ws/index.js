@@ -1,29 +1,27 @@
 import * as api from './api.js'
-
 import * as constants from './constants.js'
+import * as database from './database.js'
 
-import { db, getOldestPriceSync } from './database.js'
+const SYMBOL = 'AVAXBRL'
 
-const makePriceDiffs = (price = {}, datetime = Date.now()) => ({
+const symbolDiffs = (price = {}, datetime = Date.now()) => ({
   ...price,
   datetime,
-  price_x: getOldestPriceSync(price.symbol, datetime - constants.DATETIME_X),
-  price_y: getOldestPriceSync(price.symbol, datetime - constants.DATETIME_Y)
+  price_x: database.getOldestPriceSync(price.symbol, datetime - constants.DATETIME_X),
+  price_y: database.getOldestPriceSync(price.symbol, datetime - constants.DATETIME_Y)
 })
 
-const savePrice = ({ symbol, price, datetime, price_x, price_y } = {}) => db.in('price')
-  .new()
-  .writeMany({ symbol, price, datetime, price_x, price_y })
+const saveTickerPrice = () =>
+  api.getTickerPrice(SYMBOL)
+    .then(({ symbol, price, datetime = Date.now() }) => {
+      database.savePriceSync(symbol, price, datetime)
+      const s1 = symbolDiffs({ symbol, price, datetime })
+      const buy = (+s1?.price_x?.price > +price && +price > +s1?.price_y?.price) ? '' : 'not'
+      console.log(`may ${buy} buy`, s1)
+      const sell = (+s1?.price_x?.price < +price && +price < +s1?.price_y?.price) ? '' : 'not'
+      console.log(`may ${sell} buy`, s1)
+    })
+    .catch((err) => console.error(err))
+    .finally(() => setTimeout(saveTickerPrice, 500))
 
-const log = (err) => console.log(err)
-
-const error = (err) => console.error(err)
-
-const saveBinanceApiTickerPrice = (symbol, datetime = Date.now()) => api.getTickerPrice(symbol)
-  .then((price) => makePriceDiffs(price, datetime))
-  .then((price) => savePrice(price, datetime))
-  .then(() => log('Save Binance Api Ticker Price', datetime))
-  .catch((err) => error(err))
-  .finally(() => saveBinanceApiTickerPrice(symbol))
-
-saveBinanceApiTickerPrice('BNBBRL')
+saveTickerPrice()

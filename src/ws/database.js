@@ -2,8 +2,12 @@ import { Database } from '@brtmvdl/database'
 
 export const db = new Database({ config: '/data', type: 'fs' })
 
+export const savePriceSync = (symbol, price, datetime) => db.in('price')
+  .new()
+  .writeMany({ symbol, price, datetime })
+
 export const savePrice = (symbol, price, datetime) => Promise.resolve(
-  db.in('price').new().writeMany({ symbol, price, datetime })
+  savePriceSync(symbol, price, datetime)
 )
 
 export const savePairsPrices = (prices = [], datetime = Date.now()) => Promise.all(
