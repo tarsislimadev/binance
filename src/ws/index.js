@@ -11,14 +11,8 @@ const io = new Server(server, { cors: { origin: '*' } })
 const pricesAndDiffs = (prices = [], datetime = Date.now()) => prices
   .map((price) => ({
     ...price,
-    datetime,
-    datetime_x: datetime - config.DATETIME_X,
-    datetime_y: datetime - config.DATETIME_Y
-  }))
-  .map((price) => ({
-    ...price,
-    price_x: database.getOldestPriceSync(price.symbol, price.datetime_x),
-    price_y: database.getOldestPriceSync(price.symbol, price.datetime_y)
+    price_x: database.getOldestPriceSync(price.symbol, datetime - config.DATETIME_X),
+    price_y: database.getOldestPriceSync(price.symbol, datetime - config.DATETIME_Y)
   }))
 
 io.on('connection', socket => {
@@ -31,27 +25,18 @@ io.on('connection', socket => {
   const priceTickers = () => api.tickerPrice(constants.PAIRS)
     .then((prices) => pricesAndDiffs(prices))
     .then((prices) => [emit('symbol price ticker', prices), database.savePairsPrices(prices)])
-    .catch((err) => emit('error symbol price ticker', err))
     .finally(() => priceTickers())
 
   priceTickers()
 
-  const onServerTime = () => api.time()
-    .then((time) => emit('check server time', time))
-    .catch((err) => emit('error check server time', err))
-
-  socket.on('check server time', () => onServerTime())
-
   const onBuys = () => database.getAllBuys()
     .then((buys) => emit('buys', buys))
-    .catch((err) => emit('error buys', err))
 
   socket.on('buys', () => onBuys())
 
   const onBuy = (symbol, price, amount = 1, datetime = Date.now()) => database.saveBuy(symbol, price, amount, datetime)
     .then((buy) => emit('buy', { symbol, price, amount, datetime }))
     .then(() => onBuys())
-    .catch((err) => emit('buy error', err))
 
   socket.on('buy', ({ symbol, price, amount = 1 } = {}) => onBuy(symbol, price, amount))
 
@@ -59,7 +44,6 @@ io.on('connection', socket => {
     .then(() => onBuys())
 
   socket.on('sell', ({ datetime, price, amount }) => onSell(datetime, price, amount))
-
 })
 
 server.listen(config.PORT)
