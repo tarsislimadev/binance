@@ -1,3 +1,10 @@
+// 
+
+export const PORT = 80
+
+export const DATETIME_X = 10_000
+
+export const DATETIME_Y = 5_000
 
 export const CLOCK = {
   HOURS: 60 * 60,
@@ -21,5 +28,6 @@ export const PAIRS = [
   ['DOT', 'BRL'],
   ['BUSD', 'BRL'],
   ['CHZ', 'BRL'],
-  //
 ]
+
+export const getPairs = () => Array.from(PAIRS.map(([a, b]) => a + b))

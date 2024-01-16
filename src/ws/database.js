@@ -1,13 +1,13 @@
 import { Database } from '@brtmvdl/database'
 
-const db = new Database({ config: '/data', type: 'fs' })
+export const db = new Database({ config: '/data', type: 'fs' })
 
 export const savePrice = (symbol, price, datetime) => Promise.resolve(
   db.in('price').new().writeMany({ symbol, price, datetime })
 )
 
 export const savePairsPrices = (prices = [], datetime = Date.now()) => Promise.all(
-  prices.map(({ symbol, price } = {}) => savePrice(symbol, price, datetime))
+  Array.from(prices).map(({ symbol, price } = {}) => savePrice(symbol, price, datetime))
 )
 
 export const getAllPricesSync = () => db.in('price')
@@ -22,6 +22,8 @@ export const getOldestPriceSync = (symbol, datetime = Date.now() - 1000) => getA
   .filter((price) => +price.datetime < +datetime)
   .sort((a, b) => b.datetime - a.datetime)
   .find(() => true)
+
+export const getLatestPriceSync = (symbol) => getAllPricesSync().filter((price) => price.symbol == symbol).sort((a, b) => a.datetime - b.datetime).find(() => true)
 
 export const saveBuy = (symbol, price, amount = 1, datetime = Date.now()) => Promise.resolve(
   db.in('buy')

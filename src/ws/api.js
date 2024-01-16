@@ -1,9 +1,7 @@
 // 
 
-const f = (url) => fetch('https://api3.binance.com/api/v3/' + url).then(res => res.json())
+const getBinanceApiURL = (path) => ('https://api3.binance.com/api/v3/' + path)
 
-export const tickerPrice = (pairs = []) => f(`ticker/price?symbols=[${pairs.map(([a, b]) => `"${a}${b}"`).join(',')}]`)
+export const fetchJSON = (url) => fetch(url).then(res => res.json())
 
-export const time = () => f('time')
-
-export const buy = () => Promise.resolve({}) // FIXME
+export const getTickerPrice = (symbol = '') => fetchJSON(getBinanceApiURL('ticker/price?symbol=' + symbol))
