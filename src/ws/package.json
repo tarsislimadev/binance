@@ -1,0 +1,9 @@
+{
+  "name": "ws",
+  "version": "0.1.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --no-warnings index.js "
+  }
+}
