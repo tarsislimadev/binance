@@ -5,5 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node --no-warnings index.js "
+  },
+  "dependencies": {
+    "@brtmvdl/database": "^1.0.2",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4"
   }
 }
