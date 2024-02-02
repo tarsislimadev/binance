@@ -1,0 +1,9 @@
+{
+  "name": "@brtmvdl/binance",
+  "displayName": "Binance WebSocket API",
+  "version": "0.1.0",
+  "description": "To get data from Binance API.",
+  "main": "index.js",
+  "bin": "bin.js",
+  "license": "MIT"
+}
