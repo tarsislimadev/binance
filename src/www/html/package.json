@@ -1,0 +1,8 @@
+{
+  "name": "ws",
+  "version": "0.1.0",
+  "license": "MIT",
+  "dependencies": {
+    "@brtmvdl/frontend": "^1.0.14"
+  }
+}
