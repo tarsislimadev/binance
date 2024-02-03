@@ -15,6 +15,57 @@ export class TextHTML extends HTML {
   }
 }
 
+export class Message {
+  id = null
+  method = null
+  params = null
+  extras = null
+
+  constructor(id, method, params = {}, extras = {}) {
+    this.id = id
+    this.method = method
+    this.params = params
+    this.extras = extras
+  }
+
+  toJSON() {
+    const { id, method, params } = this
+    return { id, method, params }
+  }
+
+  toString() {
+    return JSON.stringify(this.toJSON(), null, 4)
+  }
+}
+
+export class InputMessage extends Message { }
+
+export class OutputMessage extends Message { }
+
+export class SocketMessage extends Message {
+  constructor(event, extras = {}) {
+    super(Date.now(), event, null, extras)
+  }
+}
+
+export class OpenMessage extends SocketMessage {
+  constructor(extras = {}) {
+    super('open', extras)
+  }
+}
+
+export class ErrorMessage extends SocketMessage {
+  constructor(extras = {}) {
+    super('error', extras)
+  }
+}
+
+export class CloseMessage extends SocketMessage {
+  constructor(extras = {}) {
+    super('close', extras)
+  }
+}
+
 export class Page extends HTML {
   state = {
     socket: new WebSocket('wss://testnet.binance.vision/ws-api/v3'),
@@ -83,9 +134,9 @@ export class Page extends HTML {
   }
 
   sendSocketMessage(method, params = {}, id = Date.now()) {
-    const message = { id, method, params }
-    this.state.messages.push(message)
-    this.state.socket.send(JSON.stringify(message))
+    const message = new InputMessage(id, method, params)
+    this.appendMessage(message)
+    this.state.socket.send(message.toString())
   }
 
   getMessages() {
@@ -93,33 +144,48 @@ export class Page extends HTML {
   }
 
   setSocketEvents() {
-    this.state.socket.onopen = event => this.onOpen(event)
-    this.state.socket.onmessage = event => this.onMessage(event)
-    this.state.socket.onerror = event => this.onError(event)
-    this.state.socket.onclose = event => this.onClose(event)
+    this.state.socket.addEventListener('open', (event) => this.onOpen(event))
+    this.state.socket.addEventListener('message', (event) => this.onMessage(event))
+    this.state.socket.addEventListener('error', (event) => this.onError(event))
+    this.state.socket.addEventListener('close', (event) => this.onClose(event))
   }
 
   onOpen(event) {
-    console.log({ method: 'open', event, params: { datetime: Date.now() } })
-    this.appendMessage({ method: 'open', event, params: { datetime: Date.now() } })
+    // console.log({ method: 'open', event, params: { datetime: Date.now() } })
+    return this.appendMessage(new OpenMessage(event))
   }
 
   onMessage(event) {
-    console.log({ method: 'message', params: JSON.parse(event.data) })
-    this.appendMessage({ method: 'message', params: JSON.parse(event.data) })
+    const data = JSON.parse(event.data)
+    // console.log({ method: 'message', data })
+    return this.appendMessage(this.getOutputMessage(data))
+  }
+
+  getOutputMessage(data = {}) {
+    const method = this.getMethodById(data.id)
+    switch (method) {
+      case '': return new Message(Date.now(), '')
+    }
+    return new OutputMessage(data.id, method, data.result, data)
+  }
+
+  getMethodById(params_id = '') {
+    return this.state.messages.find(({ id }) => id === params_id)?.method
   }
 
   onError(event) {
-    console.log({ method: 'error', event, params: { datetime: Date.now() } })
-    this.appendMessage({ method: 'error', event, params: { datetime: Date.now() } })
+    // console.log({ method: 'error', event, params: { datetime: Date.now() } })
+    return this.appendMessage(new ErrorMessage(event))
   }
 
   onClose(event) {
-    console.log({ method: 'close', event, params: { datetime: Date.now() } })
-    this.appendMessage({ method: 'close', event, params: { datetime: Date.now() } })
+    // console.log({ method: 'close', event, params: { datetime: Date.now() } })
+    return this.appendMessage(new CloseMessage(event))
   }
 
-  appendMessage(message = {}) {
-    this.children.messages.append(new TextHTML(JSON.stringify(message)))
+  appendMessage(message = new Message()) {
+    this.state.messages.push(message.toJSON())
+    this.children.messages.prepend(new TextHTML(message.toString()))
+    return this
   }
 }
