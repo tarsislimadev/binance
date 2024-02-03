@@ -2,6 +2,8 @@ import { HTML, nFlex, nSelect, nButton } from '@brtmvdl/frontend'
 import { getMethodsList, getParamsList } from './utils/lists.js'
 import { ParamsComponent } from './components/index.js'
 
+import { SelectComponent, ButtonComponent } from './components/index.js'
+
 export class TextHTML extends HTML {
   text = null
 
@@ -73,9 +75,9 @@ export class Page extends HTML {
   }
 
   children = {
-    select: new nSelect(),
+    select: new SelectComponent(),
     inputs: new HTML(),
-    button: new nButton(),
+    button: new ButtonComponent(),
     messages: new HTML(),
     params: new ParamsComponent()
   }
