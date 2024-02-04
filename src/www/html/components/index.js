@@ -9,3 +9,5 @@ export * from './label.js'
 export * from './params.js'
 
 export * from './select.js'
+
+export * from './text.js'
