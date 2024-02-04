@@ -1,5 +1,4 @@
-import { HTML } from '@brtmvdl/frontend'
-
+import { HTML, nHr } from '@brtmvdl/frontend'
 import { TextHTML } from './text.js'
 
 export class Message extends HTML {
@@ -17,10 +16,32 @@ export class Message extends HTML {
 
   onCreate() {
     super.onCreate()
-    this.append(new TextHTML(this.type))
-    this.append(new TextHTML(this.id))
-    this.append(new TextHTML(this.method))
-    this.append(new TextHTML(JSON.stringify(this.params)))
+    this.append(this.getHeaderHTML())
+    this.append(this.getBodyHTML())
+    this.append(this.getFooterHTML())
+    this.append(new nHr())
+  }
+
+  getHeaderHTML() {
+    const header = new HTML()
+    header.setStyle('margin', '0rem 0rem 1rem 0rem')
+    header.append(new TextHTML(this.type))
+    header.append(new TextHTML(this.method))
+    return header
+  }
+
+  getBodyHTML() {
+    const body = new HTML()
+    body.setStyle('margin', '0rem 0rem 1rem 0rem')
+    body.append(new TextHTML(JSON.stringify(this.params)))
+    return body
+  }
+
+  getFooterHTML() {
+    const footer = new HTML()
+    footer.setStyle('margin', '0rem 0rem 1rem 0rem')
+    footer.append(new TextHTML(this.id))
+    return footer
   }
 
   toJSON() {
@@ -45,6 +66,8 @@ export class openMessage extends SocketMessage {
   constructor(extras = {}) {
     super('open', extras)
   }
+
+  getBodyHTML() { return new HTML() }
 }
 
 export class errorMessage extends SocketMessage {
@@ -69,10 +92,6 @@ export class OutputMessage extends Message {
   constructor(method, data = {}) {
     super(data.id, method, data.result)
     console.log(data.id, method, data.result)
-  }
-
-  onCreate() {
-    super.onCreate()
   }
 }
 
